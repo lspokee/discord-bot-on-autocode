@@ -5,36 +5,75 @@ if (context.params.event.channel_id !== '877153308534525953') {
     return;
 }
 let contentStr = context.params.event.content;
-if (context.params.event.channel_id == '833690031695986758') {
+if (context.params.event.channel_id == '833690031695986758' || context.params.event.channel_id == '877153308534525953') {
     // kitchen special
-    if (contentStr === ',shit') {
-        let random = Math.floor(Math.random() * 1000);
+    if (contentStr.includes('食乜好') || contentStr.includes('食咩好') || contentStr.includes('eat what')) {
+        let result = await lib.googlesheets.query['@0.3.0'].select({
+            range: `A1:B999`,
+            bounds: 'FIRST_EMPTY_ROW',
+            where: [{}],
+            limit: {
+                'count': 0,
+                'offset': 0
+            }
+        });
+        let resArr = result.rows;
+        let random = Math.floor(Math.random() * resArr.length);
+        var item = resArr[random].fields.Item;
+        if (contentStr.includes('debug_mode')) {
+            var pointer = contentStr.split(' ')[2];
+            if (pointer) {
+                if (pointer === "latest") {
+                    item = resArr[resArr.length - 1].fields.Item;
+                } else {
+                    item = resArr[parseInt(pointer) - 2].fields.Item;
+                }
+            }
+        }
+        if (item == "落街轉左第x間（x=日期個位+十位）") {
+            let today = new Date().getDate();
+            let x = today > 10 ? (today % 10 + Math.floor(today / 10)) : today;
+            return lib.discord.channels['@0.2.0'].messages.create({
+                channel_id: `${context.params.event.channel_id}`,
+                content: `<@!${context.params.event.author.id}> 你就食 落街轉左第${x}間 [抽中左 ${item}] 啦！`
+            });
+        }
         return lib.discord.channels['@0.2.0'].messages.create({
             channel_id: `${context.params.event.channel_id}`,
-            content: `shit！<@!${context.params.event.author.id}> 屙出了${random}米:shit:！`
+            content: `<@!${context.params.event.author.id}> 你就食 ${item} 啦！`
+        });
+    }
+    if (contentStr.startsWith(',addfood')) {
+        let item = contentStr.replace(",addfood", "").trimStart();
+        let result = await lib.googlesheets.query['@0.3.0'].insert({
+            range: `A1:A999`,
+            fieldsets: [{
+                'Item': `${item}`
+            }]
+        });
+        return lib.discord.channels['@0.2.0'].messages.create({
+            channel_id: `${context.params.event.channel_id}`,
+            content: `<@!${context.params.event.author.id}>  已經加左 ${item} 入廚房menu！`
         });
     }
     if (contentStr === ',shit') {
         let random = Math.floor(Math.random() * 1000);
-        return lib.discord.channels['@0.2.0'].messages.create({
+        let reply = await lib.discord.channels['@0.2.0'].messages.create({
             channel_id: `${context.params.event.channel_id}`,
             content: `shit！<@!${context.params.event.author.id}> 屙出了${random}米:shit:！`
         });
+        return lib.googlesheets.query['@0.3.0'].insert({
+            spreadsheetId: `1XynNpWDmNoGGZh46ScLrdPnshHauR7Ngx81CDexRPr4`,
+            range: `A:E`,
+            fieldsets: [{
+                distance: `${random}`,
+                user_id: `${context.params.event.author.id}`,
+                username: `${context.params.event.member.nick}`,
+                channel_id: `${context.params.event.channel_id}`,
+                timestamp: new Date().toISOString()
+            }]
+        });
     }
-    // if (contentStr === ',shit hard') {
-    //     let random = Math.floor(Math.random() * 10000);
-    //     return lib.discord.channels['@0.2.0'].messages.create({
-    //         channel_id: `${context.params.event.channel_id}`,
-    //         content: `shit！<@!${context.params.event.author.id}> 屙出了${random}米:shit:！`
-    //     });
-    // }
-    // if (contentStr === ',shit harder') {
-    //     let random = Math.floor(Math.random() * 100000);
-    //     return lib.discord.channels['@0.2.0'].messages.create({
-    //         channel_id: `${context.params.event.channel_id}`,
-    //         content: `shit！<@!${context.params.event.author.id}> 屙出了${random}米:shit:！`
-    //     });
-    // }
     if (contentStr === ',shit the fuck up') {
         if (context.params.event.author.id == '328509372076392448') {
             let random = Math.floor(Math.random() * 5000000);
@@ -48,13 +87,53 @@ if (context.params.event.channel_id == '833690031695986758') {
             content: `<:f_laladunno:739438957896663080>`
         });
     }
-
+    if (contentStr === ',shit-ranking') {
+        let command = contentStr.replace(",shit-ranking", "").trimStart();
+        let result = await lib.googlesheets.query['@0.3.0'].select({
+            spreadsheetId: `1XynNpWDmNoGGZh46ScLrdPnshHauR7Ngx81CDexRPr4`,
+            range: `A:E`,
+            bounds: 'FIRST_EMPTY_ROW',
+            where: [{
+                'timestamp__date_gt': new Date().toLocaleDateString() + ' 00:00:00+08:00'
+            }],
+            limit: {
+                'count': 10,
+                'offset': 0
+            }
+        });
+        let reply = await lib.discord.channels['@0.2.0'].messages.create({
+            channel_id: `${context.params.event.channel_id}`,
+            content: `shit！<@!${context.params.event.author.id}> 屙出了${random}米:shit:！`
+        });
+        return lib.googlesheets.query['@0.3.0'].insert({
+            spreadsheetId: `1XynNpWDmNoGGZh46ScLrdPnshHauR7Ngx81CDexRPr4`,
+            range: `A:C`,
+            fieldsets: [{
+                distance: `${random}`,
+                user_id: `${context.params.event.author.id}`,
+                timestamp: new Date().toISOString()
+            }]
+        });
+    }
     if (contentStr.includes('但丁')) {
+        if (contentStr.includes('光頭')) {
+            return lib.discord.channels['@0.2.0'].messages.create({
+                channel_id: `${context.params.event.channel_id}`,
+                content: 'https://media.discordapp.net/attachments/363677618144280589/738081585366171738/image0.png?width=225&height=300'
+            });
+        }
         return lib.discord.channels['@0.2.0'].messages.create({
             channel_id: `${context.params.event.channel_id}`,
             content: '但丁係光頭仔'
         });
     }
+    if (contentStr.includes('歡迎')) {
+        return lib.discord.channels['@0.2.0'].messages.create({
+            channel_id: `${context.params.event.channel_id}`,
+            content: 'https://na.cx/i/ToDEWAq.gif'
+        });
+    }
+
     if (contentStr.includes('薯巨')) {
         return lib.discord.channels['@0.2.0'].messages.create({
             channel_id: `${context.params.event.channel_id}`,
@@ -78,7 +157,7 @@ if (contentStr === ',help') {
                 name: '非新人之召喚checklist',
                 value: ['試玩限制  i2501  版本差異  PS版購買懶人包  ',
                     'steam開ac懶人包  steam購買懶人包  下載創角懶人包',
-                    '改制教學  hud教學  排唔到副本  點拎坐騎  幻想藥',
+                    '改制教學  hud教學  排唔到副本  點拎坐騎  點樣飛  幻想藥',
                     '新手副本機制  幻化教學  軍團差異  手掣教學',
                     '咩ser多人玩  轉職前置  漢化教學  生產裝換領'
                 ].join('\n')
@@ -87,7 +166,8 @@ if (contentStr === ',help') {
                 value: [',dice  ,fashion  抽職  抽ser  抽種族  優遇server一覽',
                     '主線任務數量  升lv方法  基本禮儀   新手必改設定',
                     'Ifrit之臭雞  但丁光頭  妖怪手錶  想唔想我玩姐  dllmi2501',
-                    '蟹柳好偉大  big fat taco  lahee  幾時打牌'
+                    '蟹柳好偉大  big fat taco  lahee  幾時打牌',
+                    '練生產.gif 新生祭.gif  Lawson討伐戰  活動.gif'
                 ].join('\n')
             }]
         }
@@ -161,6 +241,12 @@ if (contentStr.toLowerCase().includes('dllm') && contentStr.toLowerCase().includ
         content: 'https://media.discordapp.net/attachments/704017265544265749/877880181786832926/tenor_1.gif'
     });
 }
+if (contentStr.includes('客家人')) {
+    return lib.discord.channels['@0.2.0'].messages.create({
+        channel_id: `${context.params.event.channel_id}`,
+        content: 'https://media.discordapp.net/attachments/877130233294258209/879544369114402846/image0.jpg'
+    });
+}
 if (contentStr.includes('抽') && contentStr.toLowerCase().includes('ser')) {
     let random = Math.floor(Math.random() * 11);
     let gaia_arr = ["Alexander", "Bahamut", "Durandal", "Fenrir", "Ifrit", "Ridill", "Tiamat", "Ultima", "Valefor", "Yojimbo", "Zeromus"];
@@ -172,7 +258,7 @@ if (contentStr.includes('抽') && contentStr.toLowerCase().includes('ser')) {
 }
 
 if (contentStr.includes('抽') && contentStr.includes('種族')) {
-    let race = ["Lalafell 拉拉肥", "Hyuran 人類", "Elezen 精靈", "Lalafell 拉拉菲爾", "Lalafell 拉拉肥是食物", "Lalafell 拉拉肥", "Miqo'te 貓魅", "Roegadyn 魯加", "Au Ra 敖龍", "Hrothgar 維埃拉(兔女郎)", "Viera 獅子"];
+    let race = ["Lalafell 拉拉肥", "Hyuran 人類", "Elezen 精靈", "Lalafell 拉拉菲爾", "Lalafell 拉拉肥是食物", "Lalafell 拉拉肥", "Miqo'te 貓魅", "Roegadyn 魯加", "Au Ra 敖龍", "Hrothgar 獅子", "Viera 維埃拉(兔女郎)"];
     let random = Math.floor(Math.random() * race.length);
     let item = race[random];
     return lib.discord.channels['@0.2.0'].messages.create({
@@ -418,10 +504,61 @@ if ((contentStr.includes('新手') || contentStr.includes('有用')) && (content
     });
 }
 
+if (contentStr.includes('練生產.gif')) {
+    return lib.discord.channels['@0.2.0'].messages.create({
+        channel_id: `${context.params.event.channel_id}`,
+        content: `https://cdn.discordapp.com/attachments/877130233294258209/879974037089038346/image0.gif`
+    });
+}
+
+if (contentStr.includes('紅蓮祭')) {
+    return lib.discord.channels['@0.2.0'].messages.create({
+        channel_id: `${context.params.event.channel_id}`,
+        // content: `https://cdn.discordapp.com/attachments/704017265544265749/880264655325495317/image0.png`
+        content: `一早過左啦<:u_hahaha:673423717124276247>`
+    });
+}
+
+if (contentStr.includes('新生祭.gif')) {
+    return lib.discord.channels['@0.2.0'].messages.create({
+        channel_id: `${context.params.event.channel_id}`,
+        content: `https://cdn.discordapp.com/attachments/877130233294258209/880161691164356638/image0.gif`
+    });
+}
+
+if (contentStr.toLowerCase().includes("lawson")) {
+    return lib.discord.channels['@0.2.0'].messages.create({
+        channel_id: `${context.params.event.channel_id}`,
+        content: '',
+        embed: {
+            title: 'Lawson討伐戰',
+            type: 'rich',
+            color: 0x445094,
+            description: '',
+            image: {
+                'url': 'https://cdn.discordapp.com/attachments/877130233294258209/882647484558630983/image0.gif',
+                "height": 0,
+                "width": 0
+            },
+            fields: [{
+                name: '活動連結',
+                value: 'https://www.lawson.co.jp/lab/campaign/ffxiv/mileage.html'
+            }]
+        }
+    });
+}
+
+if (contentStr.includes('活動.gif')) {
+    return lib.discord.channels['@0.2.0'].messages.create({
+        channel_id: `${context.params.event.channel_id}`,
+        content: `https://cdn.discordapp.com/attachments/877130233294258209/882643519817252885/image0.gif`
+    });
+}
+
 // Classify whether an user joined for 90days or not
 // if so, answer newible questions
 // console.log(context.params);
-if (new Date() - new Date(context.params.event.member.joined_at) < 90 * 24 * 3600 * 1000) {
+if (context.params.event.member.joined_at && (new Date() - new Date(context.params.event.member.joined_at) < 90 * 24 * 3600 * 1000)) {
     if ((contentStr.includes('試玩') || contentStr.includes('免費')) && (contentStr.includes('限制') || contentStr.includes('資訊') || contentStr.toLowerCase().includes('info') || contentStr.includes('功能'))) {
         return lib.discord.channels['@0.2.0'].messages.create({
             channel_id: `${context.params.event.channel_id}`,
@@ -531,6 +668,30 @@ if (new Date() - new Date(context.params.event.member.joined_at) < 90 * 24 * 360
         return lib.discord.channels['@0.2.0'].messages.create({
             channel_id: `${context.params.event.channel_id}`,
             content: 'https://cdn.discordapp.com/attachments/877137307810009098/878142890830872576/PF.png'
+        });
+    }
+    if (contentStr.includes('點樣飛') || contentStr.includes('風脈') || contentStr.includes('飛行')) {
+        return lib.discord.channels['@0.2.0'].messages.create({
+            channel_id: `${context.params.event.channel_id}`,
+            content: '',
+            embed: {
+                title: '點樣飛',
+                type: 'rich',
+                color: 0xa4de02,
+                description: ['50lv完成2.0主線後即可解鎖飛行，3.0及以後地圖需要完成對應地圖主線、完成對應地圖風脈泉支線(藍任)以及與地圖上的風脈泉共鳴後才能飛行。',
+                    '丶所有坐騎均可飛行。',
+                    '丶風脈泉理論上需要玩家使用風脈儀尋找，但若想偷懶可以參照風脈地圖。',
+                    '丶風脈泉大多分佈在主線路線上。',
+                    '丶每張地圖固定有10個風脈泉和5個風脈支線。\n'
+                ].join('\n'),
+                fields: [{
+                    name: '風脈地圖：',
+                    value: ['[#日文](https://game8.jp/ff14/275978)',
+                        '[#簡中](https://tools.ffxiv.cn/lajipai/index.html)',
+                        '[#Discord資料區-風脈及地圖](https://discord.com/channels/363677618144280587/543271289620791296)'
+                    ].join('  ')
+                }]
+            }
         });
     }
     if (contentStr.includes('幻想藥') || contentStr.includes('美容師')) {
@@ -782,6 +943,30 @@ if (new Date() - new Date(context.params.event.member.joined_at) < 90 * 24 * 360
         return lib.discord.channels['@0.2.0'].messages.create({
             channel_id: `${context.params.event.channel_id}`,
             content: 'https://cdn.discordapp.com/attachments/877137307810009098/878142890830872576/PF.png',
+        });
+    }
+    if (contentStr === '點樣飛') {
+        return lib.discord.channels['@0.2.0'].messages.create({
+            channel_id: `${context.params.event.channel_id}`,
+            content: '',
+            embed: {
+                title: '點樣飛',
+                type: 'rich',
+                color: 0xa4de02,
+                description: ['50lv完成2.0主線後即可解鎖飛行，3.0及以後地圖需要完成對應地圖主線、完成對應地圖風脈泉支線(藍任)以及與地圖上的風脈泉共鳴後才能飛行。',
+                    '丶所有坐騎均可飛行。',
+                    '丶風脈泉理論上需要玩家使用風脈儀尋找，但若想偷懶可以參照風脈地圖。',
+                    '丶風脈泉大多分佈在主線路線上。',
+                    '丶每張地圖固定有10個風脈泉和5個風脈支線。\n'
+                ].join('\n'),
+                fields: [{
+                    name: '風脈地圖：',
+                    value: ['[#日文](https://game8.jp/ff14/275978)',
+                        '[#簡中](https://tools.ffxiv.cn/lajipai/index.html)',
+                        '[#Discord資料區-風脈及地圖](https://discord.com/channels/363677618144280587/543271289620791296)'
+                    ].join('  ')
+                }]
+            }
         });
     }
     if (contentStr === ('幻想藥') || contentStr === ('美容師')) {
