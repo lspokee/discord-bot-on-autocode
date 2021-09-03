@@ -8,10 +8,21 @@ let contentStr = context.params.event.content;
 if (context.params.event.channel_id == '833690031695986758' || context.params.event.channel_id == '877153308534525953') {
     // kitchen special
     if (contentStr.includes('食乜好') || contentStr.includes('食咩好') || contentStr.includes('eat what')) {
+        var whereClause = [{}];
+        if (contentStr.includes('正常')) {
+            whereClause = [{
+                'Type__is': `食得`
+            }];
+        }
+        if (contentStr.includes('開放')) {
+            whereClause = [{
+                'Type__not': `食得`
+            }];
+        }
         let result = await lib.googlesheets.query['@0.3.0'].select({
-            range: `A1:B999`,
+            range: `A1:C999`,
             bounds: 'FIRST_EMPTY_ROW',
-            where: [{}],
+            where: whereClause,
             limit: {
                 'count': 0,
                 'offset': 0
